@@ -1,9 +1,12 @@
 const snake = [];
 let apples = [];
 const fields = [];
+let score = 0;
 
-const size = 10;
-const speed = 1000;
+let size = 10;
+let speed = 400;
+
+let scoreView;
 
 const DIR_TOP = 0;
 const DIR_RIGHT = 1;
@@ -29,6 +32,10 @@ const uncheckAllFields = () => {
     })
 }
 
+const getSnakeHead = () => {
+    return snake[snake.length - 1];
+}
+
 const createField = (i, j) => {
     const field = document.createElement('input');
     field.type = 'checkbox';
@@ -37,7 +44,7 @@ const createField = (i, j) => {
 }
 
 const initField = () => {
-    const playField = document.getElementById('app');
+    const playField = document.getElementById('game');
     for (let i = 0; i < size; ++i) {
         const string = document.createElement('div');
         for (let j = 0; j < size; ++j) {
@@ -59,7 +66,7 @@ const initSnake = () => {
 
 const moveHead = () => {
     const index = snake.length - 1;
-    const snakeEl = snake[index];
+    const snakeEl = getSnakeHead();
     switch (direction) {
         case DIR_TOP:
             snake[index] = [snakeEl[0] - 1, snakeEl[1]];
@@ -101,7 +108,7 @@ const moveSnake = () => {
 }
 
 const spawnApple = () => {
-    if (random(10) > 5) {
+    if (random(50) > 45) {
         const apple = [random(size), random(size)];
         if (!snake.includes(apple) && !apples.includes(apple)) {
             apples.push(apple);
@@ -109,8 +116,13 @@ const spawnApple = () => {
     }
 }
 
+const updateScore = () => {
+    score++;
+    scoreView.innerText = score;
+}
+
 const manipApples = () => {
-    let snakeHead = snake[snake.length - 1];
+    let snakeHead = getSnakeHead();
     switch (direction) {
         case DIR_TOP:
             snakeHead = [snakeHead[0] - 1, snakeHead[1]];
@@ -129,6 +141,7 @@ const manipApples = () => {
     apples = apples.filter((apple) => {
         if (apple[0] == snakeHead[0] && apple[1] == snakeHead[1]) {
             snake.push(snakeHead);
+            updateScore();
             return false;
         }
         setFieldChecked(...apple, "red");
@@ -136,32 +149,62 @@ const manipApples = () => {
     })
 }
 
+const lost = () => {
+    alert("Your score: " + score);
+    location.reload();
+}
+
+const checkDeath = () => {
+    const head = getSnakeHead();
+    const headIndex = snake.length - 1
+    snake.some((element, index) => {
+        if (index != headIndex) {
+            if (element[0] == head[0] && element[1] == head[1]) {
+                lost();
+                return true;
+            }
+        }
+        return false;
+    })
+}
+
 const gameLoop = () => {
     uncheckAllFields();
     manipApples();
     moveSnake();
+    checkDeath();
 }
 
-const runGameLoop = () => setInterval(gameLoop, speed);
+const runGameLoop = () => setInterval(gameLoop, 1000 / speed);
 
-window.onload = () => {
-    console.log("init game");
+const getSettings = () => {
+    size = Number(document.getElementById('size').value);
+    speed = Number(document.getElementById('speed').value);
+}
+
+const run = () => {
+    getSettings();
+    scoreView = document.getElementById('score');
     initField();
     initSnake();
     runGameLoop();
 
     document.addEventListener('keydown', function (event) {
-        if (event.code == 'ArrowLeft') {
+        if (event.code == 'ArrowLeft' && direction != DIR_RIGHT) {
             direction = DIR_LEFT;
         }
-        if (event.code == 'ArrowUp') {
+        if (event.code == 'ArrowUp' && direction != DIR_BOTTOM) {
             direction = DIR_TOP;
         }
-        if (event.code == 'ArrowDown') {
+        if (event.code == 'ArrowDown' && direction != DIR_TOP) {
             direction = DIR_BOTTOM;
         }
-        if (event.code == 'ArrowRight') {
+        if (event.code == 'ArrowRight' && direction != DIR_LEFT) {
             direction = DIR_RIGHT;
         }
     });
+}
+
+window.onload = () => {
+    document.getElementById('run').onclick = run
 };
